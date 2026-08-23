@@ -1,10 +1,16 @@
+# .github/workflows/cicd.yml
 name: CICD
 
 on:
   push:
+    branches:
+      - master # 仅当推送到 master 分支时触发（若你的主分支是 main 请改为 main）
+
+permissions:
+  contents: write # 赋予 Action 写入 gh-pages 分支的权限
 
 jobs:
-  check:
+  check-and-deploy:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Source Code
@@ -16,7 +22,19 @@ jobs:
           node-version: 20
           cache: 'yarn'
 
-      - name: Install and Run Check Script
+      - name: Install Dependencies
+        run: yarn install
+
+      - name: Run Prettier Check
+        run: yarn prettier --check ./source
+
+      - name: Build Hexo Static Files
         run: |
-          yarn install
-          yarn prettier --check ./source
+          yarn hexo clean
+          yarn hexo generate
+
+      - name: Deploy to GitHub Pages
+        uses: JamesIves/github-pages-deploy-action@v4
+        with:
+          folder: public # Hexo 生成的静态文件目录
+          branch: gh-pages # 自动推送到 gh-pages 分支
